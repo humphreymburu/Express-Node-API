@@ -1,32 +1,38 @@
 const path = require('path')
 const webpack = require('webpack')
 const nodeExternals = require('webpack-node-externals')
+const StartServerPlugin = require('start-server-webpack-plugin')
+
 module.exports = {
-  entry: {
-    server: './server.js',
-  },
-  output: {
-    path: path.join(__dirname, 'dist'),
-    publicPath: '/',
-    filename: '[name].js'
-  },
-  target: 'node',
-  node: {
-    // Need this when working with express, otherwise the build fails
-    __dirname: false,   // if you don't put this is, __dirname
-    __filename: false,  // and __filename return blank or /
-  },
-  externals: [nodeExternals()], // Need this to avoid error when working with Express
-  module: {
-    rules: [
-      {
-        // Transpiles ES6-8 into ES5
-        test: /\.js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: "babel-loader"
-        }
-      }
-    ]
-  }
+    entry: [
+        'webpack/hot/poll?1000',
+        './src/index'
+    ],
+    watch: true,
+    target: 'node',
+    externals: [nodeExternals({
+        whitelist: ['webpack/hot/poll?1000']
+    })],
+    module: {
+        rules: [{
+            test: /\.js?$/,
+            use: 'babel-loader',
+            exclude: /node_modules/
+        }]
+    },
+    plugins: [
+        new StartServerPlugin('server.js'),
+        new webpack.NamedModulesPlugin(),
+        new webpack.HotModuleReplacementPlugin(),
+        new webpack.NoEmitOnErrorsPlugin(),
+        new webpack.DefinePlugin({
+            "process.env": {
+                "BUILD_TARGET": JSON.stringify('server')
+            }
+        }),
+    ],
+    output: {
+        path: path.join(__dirname, '.build'),
+        filename: 'server.js'
+    }
 }
